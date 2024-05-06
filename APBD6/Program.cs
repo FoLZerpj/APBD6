@@ -27,4 +27,8 @@ app.MapPost("/product", async ([FromBody] AddProductInfo info) => await controll
     .WithName("PostProduct")
     .WithOpenApi();
 
+app.MapPost("/product/procedure", async ([FromBody] AddProductInfo info) => await controller.AddProductToWarehouseProcedure(info))
+    .WithName("PostProductUsingProcedure")
+    .WithOpenApi();
+
 app.Run();

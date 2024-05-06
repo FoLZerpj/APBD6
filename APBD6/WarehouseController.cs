@@ -1,12 +1,12 @@
-﻿using System.Data.SqlClient;
+﻿using System.Data;
+using System.Data.SqlClient;
 using System.Diagnostics;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace APBD6;
 
 public class WarehouseController(string connectionString)
 {
-    private SqlConnection _connection = new SqlConnection(connectionString);
+    private readonly SqlConnection _connection = new SqlConnection(connectionString);
 
     public static async Task<WarehouseController> Create(string connectionString)
     {
@@ -78,6 +78,24 @@ public class WarehouseController(string connectionString)
 
         await using (SqlCommand command = new SqlCommand("SELECT @@IDENTITY AS NewId", this._connection))
         {
+            decimal? newId = (decimal?)await command.ExecuteScalarAsync();
+            if (!newId.HasValue)
+            {
+                throw new UnreachableException("Database returned no id for an inserted record");
+            }
+            return TypedResults.Ok(newId.Value);
+        }
+    }
+
+    public async Task<IResult> AddProductToWarehouseProcedure(AddProductInfo info)
+    {
+        await using (var command = new SqlCommand("AddProductToWarehouse", this._connection))
+        {
+            command.CommandType = CommandType.StoredProcedure;
+            command.Parameters.AddWithValue("@IdProduct", info.IdProduct);
+            command.Parameters.AddWithValue("@IdWarehouse", info.IdWarehouse);
+            command.Parameters.AddWithValue("@Amount", info.Amount);
+            command.Parameters.AddWithValue("@CreatedAt", info.CreatedAt);
             decimal? newId = (decimal?)await command.ExecuteScalarAsync();
             if (!newId.HasValue)
             {
